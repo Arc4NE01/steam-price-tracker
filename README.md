@@ -1,6 +1,6 @@
 # Steam Price Tracker
 
-Tracks the price of my Steam wishlist games across regions — mainly China, Ukraine, and
+Tracks the price of my Steam wishlist games across regions: mainly China, Ukraine, and
 whichever region is cheapest. Runs locally, Python only, no Node or API keys.
 
 ## What it does
@@ -18,7 +18,7 @@ Python 3.11+, FastAPI, SQLite, plain HTML/CSS/JS. Data from Steam's public store
 
 ## Running it (Windows)
 
-1. Install [Python 3.11+](https://www.python.org/downloads/) — tick "Add Python to PATH".
+1. Install [Python 3.11+](https://www.python.org/downloads/).
 2. Double-click `start.bat`. It installs the dependencies, starts the server, and opens the app.
 3. Click Settings and paste your Steam ID or profile URL. Your wishlist needs to be public (Steam → Edit Profile → Privacy → Game details → Public).
 
@@ -40,4 +40,4 @@ frontend/   index.html, app.js, style.css
 start.bat   launcher
 ```
 
-Your wishlist/price data lives in `backend/prices.db`, which is gitignored — nothing personal gets committed.
+Your wishlist/price data lives in `backend/prices.db`, which is gitignored so nothing personal gets committed.
