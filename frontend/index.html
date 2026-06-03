@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Steam Price Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <svg class="steam-logo" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59
+        1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524
+        4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524
+        4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515
+        3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436
+        15.27C1.862 20.307 6.486 24 11.979 24c6.627 0
+        11.999-5.373 11.999-12S18.606 0 11.979 0zM7.54
+        18.21l-1.473-.61c.262.543.714.999 1.314 1.25 1.297.539
+        2.793-.076 3.332-1.375.263-.63.264-1.319.005-1.949s-.75-1.121-1.377-1.383c-.624-.26-1.29-.249-1.878-.03l1.523.63c.956.4
+        1.409 1.497 1.009 2.455-.397.957-1.497
+        1.41-2.455 1.012H7.54zm11.415-9.303c0-1.662-1.353-3.015-3.015-3.015-1.665
+        0-3.015 1.353-3.015 3.015 0 1.665 1.35 3.015 3.015 3.015
+        1.663 0 3.015-1.35 3.015-3.015zm-5.273-.005c0-1.252
+        1.013-2.266 2.265-2.266 1.249 0 2.266 1.014 2.266 2.266 0
+        1.251-1.017 2.265-2.266 2.265-1.252
+        0-2.265-1.014-2.265-2.265z"/>
+    </svg>
+    <div class="brand">
+      <span class="site-title">Steam Price Tracker</span>
+      <span class="site-sub">China · Ukraine · cheapest region</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sync-info">
+      <span id="sync-label" class="sync-label"></span>
+      <span class="sync-auto">auto-updates daily</span>
+    </div>
+    <button class="btn btn-ghost" onclick="toggleChat()">&#128172; Ask</button>
+    <button id="btn-refresh" class="btn btn-ghost" onclick="triggerRefresh()">
+      <span id="refresh-icon" class="ref-icon">&#10227;</span> Refresh
+    </button>
+    <button class="btn btn-primary" onclick="openSettings()">&#9881; Settings</button>
+  </div>
+</header>
+
+<!-- Chat drawer -->
+<div id="chat-overlay" class="chat-overlay hidden" onclick="toggleChat()"></div>
+<aside id="chat-drawer" class="chat-drawer hidden">
+  <div class="chat-head">
+    <div>
+      <div class="chat-title">&#128172; Price Assistant</div>
+      <div class="chat-sub">Ask about any Steam game's regional prices</div>
+    </div>
+    <button class="chat-close" onclick="toggleChat()" title="Close">&#10005;</button>
+  </div>
+  <div id="chat-body" class="chat-body"></div>
+  <div class="chat-input-row">
+    <input id="chat-input" type="text" class="chat-input" autocomplete="off"
+           placeholder="e.g. Elden Ring price in China vs Ukraine"
+           onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()" title="Send">&#10148;</button>
+  </div>
+</aside>
+
+<!-- Settings modal -->
+<div id="modal" class="modal hidden">
+  <div class="modal-backdrop" onclick="closeSettings()"></div>
+  <div class="modal-box">
+    <h2>Settings</h2>
+    <div class="field">
+      <label for="inp-steam">Steam ID or Profile URL</label>
+      <input id="inp-steam" type="text"
+        placeholder="76561198... or steamcommunity.com/id/yourname" />
+      <p class="hint">
+        Your wishlist must be <strong>Public</strong>: Steam &rsaquo; Edit Profile
+        &rsaquo; Privacy Settings &rsaquo; Game details &rsaquo; Public.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save &amp; Sync</button>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+
+  <!-- No Steam ID set yet -->
+  <div id="view-welcome" class="view hidden">
+    <div class="empty-icon">&#127918;</div>
+    <h2>Welcome to Steam Price Tracker</h2>
+    <p>Enter your Steam ID in Settings to start tracking prices in China, Ukraine, and the cheapest region.</p>
+    <button class="btn btn-primary btn-lg" onclick="openSettings()">&#9881; Open Settings</button>
+  </div>
+
+  <!-- Fetching / syncing -->
+  <div id="view-loading" class="view hidden">
+    <div class="spinner"></div>
+    <h2 id="loading-phase">Fetching prices&hellip;</h2>
+    <p id="loading-progress" class="muted"></p>
+    <div class="progress-track"><div id="progress-bar" class="progress-fill"></div></div>
+    <p class="muted small">Prices are fetched from Steam. The page updates automatically.</p>
+  </div>
+
+  <!-- Main price table -->
+  <div id="view-table" class="view hidden">
+
+    <!-- Stat cards -->
+    <div class="stats">
+      <div class="stat-card">
+        <span class="stat-num" id="stat-total">0</span>
+        <span class="stat-label">Games tracked</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num stat-green" id="stat-disc">0</span>
+        <span class="stat-label">On discount</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num stat-amber" id="stat-upcoming">0</span>
+        <span class="stat-label">Unreleased</span>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input type="text" id="search-input" class="search-input"
+                 placeholder="Search games…" oninput="applyFilters()" autocomplete="off">
+          <button class="search-clear hidden" id="search-clear" onclick="clearSearch()" title="Clear">&#10005;</button>
+        </div>
+      </div>
+      <div class="toolbar-right">
+        <div class="chip-filters">
+          <button class="fchip active" data-filter="all"        onclick="setFilter('all', this)">All</button>
+          <button class="fchip"        data-filter="discounted" onclick="setFilter('discounted', this)">Discounted</button>
+          <button class="fchip"        data-filter="upcoming"   onclick="setFilter('upcoming', this)">Unreleased</button>
+        </div>
+        <div class="sort-group">
+          <span class="sort-label">Sort</span>
+          <select id="sort-select" onchange="applyFilters()">
+            <option value="name">A &ndash; Z</option>
+            <option value="price-asc">Lowest price &#8593;</option>
+            <option value="price-desc">Highest price &#8595;</option>
+            <option value="discount">Biggest discount</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="count-row">
+      <span id="game-count-label" class="muted small"></span>
+    </div>
+
+    <div class="table-wrap">
+      <table id="price-table">
+        <thead>
+          <tr>
+            <th class="th-game">Game</th>
+            <th class="th-region">
+              <span class="flag-lg">&#127464;&#127475;</span> China <span class="chip">CNY</span>
+            </th>
+            <th class="th-region">
+              <span class="flag-lg">&#127482;&#127462;</span> Ukraine <span class="chip">UAH</span>
+            </th>
+            <th class="th-lowest">Cheapest Region</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="view-error" class="view hidden">
+    <div class="empty-icon">&#9888;</div>
+    <h2 id="err-title">Something went wrong</h2>
+    <p id="err-msg" class="muted"></p>
+    <div class="err-actions">
+      <button class="btn btn-ghost" onclick="retrySync()">&#10227; Retry</button>
+      <button class="btn btn-primary" onclick="openSettings()">&#9881; Settings</button>
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast notifications -->
+<div id="toast" class="toast hidden">
+  <span id="toast-msg"></span>
+  <button id="toast-action" class="toast-action hidden" onclick="forceRefresh()">Refresh anyway</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
