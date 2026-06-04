@@ -25,11 +25,13 @@ if %errorlevel% neq 0 (
     pause & exit /b 1
 )
 
-echo  Server starting on http://127.0.0.1:8000
+echo  Server starting on http://127.0.0.1:8770
+echo  (also reachable from other devices on your WiFi)
 echo  Opening browser in 3 seconds...
 echo.
 
 :: Open browser after 3 s (server needs a moment to be ready)
-start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8000"
+start "" cmd /c "timeout /t 3 /nobreak >nul && start http://127.0.0.1:8770"
 
-python -m uvicorn main:app --host 127.0.0.1 --port 8000
+:: 0.0.0.0 = reachable from phones/tablets on the same WiFi via this PC's IP
+python -m uvicorn main:app --host 0.0.0.0 --port 8770

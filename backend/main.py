@@ -1,7 +1,9 @@
 import asyncio
 import os
+import base64
+import secrets
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -77,6 +79,32 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Optional password protection. Set the APP_PASSWORD environment variable to
+# require a login (HTTP Basic Auth) for the whole app. Leave it unset for no auth
+# (fine on a trusted home network). Any username works; only the password matters.
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "").strip()
+
+
+@app.middleware("http")
+async def password_gate(request: Request, call_next):
+    if APP_PASSWORD:
+        header = request.headers.get("Authorization", "")
+        ok = False
+        if header.startswith("Basic "):
+            try:
+                decoded = base64.b64decode(header[6:]).decode("utf-8", "ignore")
+                _, _, pw = decoded.partition(":")
+                ok = secrets.compare_digest(pw, APP_PASSWORD)
+            except Exception:
+                ok = False
+        if not ok:
+            return Response(
+                status_code=401,
+                headers={"WWW-Authenticate": 'Basic realm="Steam Price Tracker"'},
+            )
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
